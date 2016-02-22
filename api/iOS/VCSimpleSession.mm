@@ -96,7 +96,7 @@ namespace videocore { namespace simpleApi {
     std::shared_ptr<videocore::Apple::PixelBufferSource>     m_pixelBufferSource;
     std::shared_ptr<videocore::AspectTransform>              m_pbAspect;
     std::shared_ptr<videocore::PositionTransform>            m_pbPosition;
-    
+
     std::shared_ptr<videocore::Split> m_videoSplit;
     std::shared_ptr<videocore::AspectTransform>   m_aspectTransform;
     videocore::AspectTransform::AspectMode m_aspectMode;
@@ -143,7 +143,7 @@ namespace videocore { namespace simpleApi {
     BOOL _continuousExposure;
     CGPoint _focusPOI;
     CGPoint _exposurePOI;
-    
+
     VCFilter _filter;
 }
 @property (nonatomic, readwrite) VCSessionState rtmpSessionState;
@@ -498,6 +498,11 @@ namespace videocore { namespace simpleApi {
     });
 }
 
+- (void) updateVideoFrameWithWidth:(int) width andHeight:(int)height
+{
+    m_outputSession->updateVideoFrame(width, height);
+}
+
 - (void) dealloc
 {
     [self endRtmpSession];
@@ -532,7 +537,7 @@ namespace videocore { namespace simpleApi {
 {
     std::stringstream uri ;
     uri << (rtmpUrl ? [rtmpUrl UTF8String] : "") << "/" << (streamKey ? [streamKey UTF8String] : "");
-    
+
     m_outputSession.reset(
                           new videocore::RTMPSession ( uri.str(),
                                                       [=](videocore::RTMPSession& session,
@@ -669,7 +674,7 @@ namespace videocore { namespace simpleApi {
 //Set property filter for the new enum + set dynamically the sourceFilter for the video mixer
 - (void)setFilter:(VCFilter)filterToChange {
         NSString *filterName = @"com.videocore.filters.bgra";
-        
+
         switch (filterToChange) {
             case VCFilterNormal:
                 filterName = @"com.videocore.filters.bgra";
@@ -692,7 +697,7 @@ namespace videocore { namespace simpleApi {
             default:
                 break;
         }
-        
+
         _filter = filterToChange;
         NSLog(@"FILTER IS : [%d]", (int)_filter);
         std::string convertString([filterName UTF8String]);
@@ -859,16 +864,16 @@ namespace videocore { namespace simpleApi {
     m_h264Packetizer->setOutput(m_outputSession);
     m_aacPacketizer->setOutput(m_outputSession);
 
-    
+
 }
 - (void) addPixelBufferSource: (UIImage*) image
                      withRect:(CGRect)rect {
     CGImageRef ref = [image CGImage];
-    
+
     m_pixelBufferSource = std::make_shared<videocore::Apple::PixelBufferSource>(CGImageGetWidth(ref),
                                                                                 CGImageGetHeight(ref),
                                                                                 'BGRA');
-    
+
     NSUInteger width = CGImageGetWidth(ref);
     NSUInteger height = CGImageGetHeight(ref);
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
@@ -880,12 +885,12 @@ namespace videocore { namespace simpleApi {
                                                  bitsPerComponent, bytesPerRow, colorSpace,
                                                  kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little);
     CGColorSpaceRelease(colorSpace);
-    
+
     CGContextDrawImage(context, CGRectMake(0, 0, width, height), ref);
     CGContextRelease(context);
-    
+
     m_pbAspect = std::make_shared<videocore::AspectTransform>(rect.size.width,rect.size.height,videocore::AspectTransform::kAspectFit);
-    
+
     m_pbPosition = std::make_shared<videocore::PositionTransform>(rect.origin.x, rect.origin.y,
                                                                   rect.size.width, rect.size.height,
                                                                   self.videoSize.width, self.videoSize.height
@@ -895,9 +900,9 @@ namespace videocore { namespace simpleApi {
     m_pbPosition->setOutput(m_videoMixer);
     m_videoMixer->registerSource(m_pixelBufferSource);
     m_pixelBufferSource->pushPixelBuffer(rawData, width * height * 4);
-    
+
     free(rawData);
-    
+
 }
 - (NSString *) applicationDocumentsDirectory
 {

@@ -139,6 +139,8 @@ typedef NS_ENUM(NSInteger, VCFilter) {
 - (void) startRtmpSessionWithURL:(NSString*) rtmpUrl
                     andStreamKey:(NSString*) streamKey;
 
+- (void) updateVideoFrameWithWidth:(int) width andHeight:(int)height;
+
 - (void) endRtmpSession;
 
 - (void) getCameraPreviewLayer: (AVCaptureVideoPreviewLayer**) previewLayer;
