@@ -123,9 +123,23 @@ namespace videocore { namespace iOS {
                             bThis->m_captureDevice = d;
                             NSError* error;
                             [d lockForConfiguration:&error];
-                            if(SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7.0")) {
-                                [d setActiveVideoMinFrameDuration:CMTimeMake(1, fps)];
-                                [d setActiveVideoMaxFrameDuration:CMTimeMake(1, fps)];
+                            AVCaptureDeviceFormat *bestFormat = nil;
+                            AVFrameRateRange *bestFrameRateRange = nil;
+                            for ( AVCaptureDeviceFormat *format in [d formats] ) {
+                                for ( AVFrameRateRange *range in format.videoSupportedFrameRateRanges ) {
+                                    if ( range.maxFrameRate > bestFrameRateRange.maxFrameRate ) {
+                                        bestFormat = format;
+                                        bestFrameRateRange = range;
+                                    }
+                                }
+                            }
+                            
+                            if ( bestFormat ) {
+                                if ( [d lockForConfiguration:&error] == YES ) {
+                                    d.activeFormat = bestFormat;
+                                    d.activeVideoMinFrameDuration = CMTimeMake(1, fps);
+                                    d.activeVideoMaxFrameDuration = CMTimeMake(1, fps);
+                                }
                             }
                             [d unlockForConfiguration];
                         }
