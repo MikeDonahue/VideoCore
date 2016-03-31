@@ -658,7 +658,7 @@ namespace videocore { namespace simpleApi {
     m_videoSplit->removeOutput(m_h264Encoder);
     m_h264Encoder.reset();
     m_aacEncoder.reset();
-
+    m_cameraSource.reset();
     m_outputSession.reset();
 
     _bitrate = _bpsCeiling;
