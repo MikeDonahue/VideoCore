@@ -122,6 +122,8 @@ namespace videocore { namespace iOS {
         /*! Used by Objective-C Device/Interface Orientation Notifications */
         void reorientCamera();
         
+        void resetVideoInput();
+        
     private:
         
         /*! 
@@ -134,6 +136,9 @@ namespace videocore { namespace iOS {
         void* cameraWithPosition(int position);
         
     private:
+        
+        AVCaptureDeviceInput* _videoIn;
+        AVCaptureVideoDataOutput* _videoOut;
         
         glm::mat4 m_matrix;
         struct { float x, y, w, h, vw, vh, a; } m_size, m_targetSize;

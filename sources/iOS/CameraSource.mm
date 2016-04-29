@@ -100,6 +100,8 @@ namespace videocore { namespace iOS {
         if(m_previewLayer) {
             [(id)m_previewLayer release];
         }
+        if (_videoOut) [_videoOut release];
+        if (_videoIn) [_videoIn release];
     }
     
     void
@@ -199,6 +201,8 @@ namespace videocore { namespace iOS {
                         }
                     }
                     [output release];
+                    _videoIn = [videoIn retain];
+                    _videoOut = videoOut;
                 }
                 if (callbackBlock) {
                     callbackBlock();
@@ -222,6 +226,60 @@ namespace videocore { namespace iOS {
         }
     }
 
+    void
+    CameraSource::resetVideoInput()
+    {
+        AVCaptureSession* session = (AVCaptureSession *)m_captureSession;
+        [session beginConfiguration];
+        
+        [session removeInput:_videoIn];
+        [session removeOutput:_videoOut];
+        [_videoIn release];
+        [_videoOut release];
+        /* Video */
+        AVCaptureDeviceInput* videoIn;
+        AVCaptureVideoDataOutput* videoOut;
+        
+        videoIn = [AVCaptureDeviceInput deviceInputWithDevice:((AVCaptureDevice*)m_captureDevice) error:nil];
+        videoOut = [[AVCaptureVideoDataOutput alloc] init] ;
+        videoOut.videoSettings = @{(NSString*)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA) };
+        
+        dispatch_queue_t camQueue = dispatch_queue_create("com.videocore.camera", 0);
+        [videoOut setSampleBufferDelegate:((sbCallback*)m_callbackSession) queue:camQueue];
+        videoOut.alwaysDiscardsLateVideoFrames = NO;
+        dispatch_release(camQueue);
+        
+        if([session canAddInput:videoIn]) {
+            [session addInput:videoIn];
+        }
+        if([session canAddOutput:videoOut]) {
+            [session addOutput:videoOut];
+        }
+        
+        _videoConnection = [videoOut connectionWithMediaType:AVMediaTypeVideo];
+        
+        if(!SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7.0")) {
+            if([_videoConnection isVideoMinFrameDurationSupported]) {
+                [_videoConnection setVideoMinFrameDuration:CMTimeMake(1, m_fps)];
+            }
+            if([_videoConnection isVideoMaxFrameDurationSupported]) {
+                [_videoConnection setVideoMaxFrameDuration:CMTimeMake(1, m_fps)];
+            }
+        }
+        
+        reorientCamera();
+        
+        _videoCompressionSettings = [[videoOut recommendedVideoSettingsForAssetWriterWithOutputFileType:AVFileTypeQuickTimeMovie] copy];
+        
+        ((sbCallback*)m_callbackSession).videoConnection = _videoConnection;
+        ((sbCallback*)m_callbackSession).videoCompressionSettings = _videoCompressionSettings;
+        ((sbCallback*)m_callbackSession).videoDevice = (AVCaptureDevice *)m_captureDevice;
+        
+        _videoIn = [videoIn retain];
+        _videoOut = videoOut;
+        [session commitConfiguration];
+    }
+    
     void
     CameraSource::getPreviewLayer(void** outAVCaptureVideoPreviewLayer)
     {
@@ -334,6 +392,9 @@ namespace videocore { namespace iOS {
             }
             
             reorientCamera();
+            
+            [_videoIn release];
+            _videoIn = newVideoInput;
         }
     }
     
