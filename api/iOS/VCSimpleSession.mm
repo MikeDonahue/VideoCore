@@ -690,10 +690,6 @@ namespace videocore { namespace simpleApi {
                 }
     }
 
-- (void)resetVideoInput {
-    if (m_cameraSource) m_cameraSource->resetVideoInput();
-}
-
 - (void) getCameraPreviewLayer:(AVCaptureVideoPreviewLayer **)previewLayer {
     if(m_cameraSource) {
         m_cameraSource->getPreviewLayer((void**)previewLayer);
