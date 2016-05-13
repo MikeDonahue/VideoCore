@@ -150,7 +150,6 @@ typedef NS_ENUM(NSInteger, VCDisconnectReason) {
 
 //- (void) endRtmpSession;
 - (void) manualEndRtmpSession;
-- (void) resetVideoInput;
 
 - (void) getCameraPreviewLayer: (AVCaptureVideoPreviewLayer**) previewLayer;
 
@@ -163,7 +162,5 @@ typedef NS_ENUM(NSInteger, VCDisconnectReason) {
 
 - (void) addPixelBufferSource: (UIImage*) image
                      withRect: (CGRect) rect;
-
-- (void) muteAudio;
 
 @end

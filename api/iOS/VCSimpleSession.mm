@@ -137,7 +137,6 @@ namespace videocore { namespace simpleApi {
     VCSessionState _rtmpSessionState;
     BOOL   _orientationLocked;
     BOOL   _torch;
-    BOOL   _mute;
 
     BOOL _useAdaptiveBitrate;
     BOOL _continuousAutofocus;
@@ -691,10 +690,6 @@ namespace videocore { namespace simpleApi {
                 }
     }
 
-- (void)resetVideoInput {
-    if (m_cameraSource) m_cameraSource->resetVideoInput();
-}
-
 - (void) getCameraPreviewLayer:(AVCaptureVideoPreviewLayer **)previewLayer {
     if(m_cameraSource) {
         m_cameraSource->getPreviewLayer((void**)previewLayer);
@@ -827,10 +822,8 @@ namespace videocore { namespace simpleApi {
     }
     {
         // Add mic source
-        if (!_mute) {
-            m_micSource = std::make_shared<videocore::iOS::MicSource>(self.audioSampleRate, self.audioChannelCount);
-            m_micSource->setOutput(m_audioMixer);
-        }
+        m_micSource = std::make_shared<videocore::iOS::MicSource>(self.audioSampleRate, self.audioChannelCount);
+        m_micSource->setOutput(m_audioMixer);
 
         const auto epoch = std::chrono::steady_clock::now();
 
@@ -842,15 +835,6 @@ namespace videocore { namespace simpleApi {
 
     }
 }
-
-- (void) muteAudio {
-    if (m_micSource) {
-        m_micSource->setOutput(nil);
-        m_micSource = nil;
-    }
-    _mute = YES;
-}
-
 - (void) addEncodersAndPacketizers
 {
     int ctsOffset = 2000 / self.fps; // 2 * frame duration
