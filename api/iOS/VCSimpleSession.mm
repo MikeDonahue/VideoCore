@@ -526,21 +526,35 @@ namespace videocore { namespace simpleApi {
 - (void) startRtmpSessionWithURL:(NSString *)rtmpUrl
                     andStreamKey:(NSString *)streamKey
 {
+    __block VCSimpleSession* bSelf = self;
+
+    [bSelf startRtmpSessionWithURL:rtmpUrl andStreamKey:streamKey andPrivateKey:@""];
+}
+
+- (void) startRtmpSessionWithURL:(NSString *)rtmpUrl
+                    andStreamKey:(NSString *)streamKey
+                    andPrivateKey:(NSString *)privateKey
+{
 
     __block VCSimpleSession* bSelf = self;
 
     dispatch_async(_graphManagementQueue, ^{
-        [bSelf startSessionInternal:rtmpUrl streamKey:streamKey];
+        [bSelf startSessionInternal:rtmpUrl streamKey:streamKey privateKey:privateKey];
     });
 }
+
 - (void) startSessionInternal: (NSString*) rtmpUrl
                     streamKey: (NSString*) streamKey
+                    privateKey: (NSString*) privateKey
 {
     std::stringstream uri ;
     uri << (rtmpUrl ? [rtmpUrl UTF8String] : "") << "/" << (streamKey ? [streamKey UTF8String] : "");
 
+    std::string privateKeyStr = [privateKey UTF8String];
+
     m_outputSession.reset(
                           new videocore::RTMPSession ( uri.str(),
+                                                      privateKeyStr,
                                                       [=](videocore::RTMPSession& session,
                                                           ClientState_t state) {
 

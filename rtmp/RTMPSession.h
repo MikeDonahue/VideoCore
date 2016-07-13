@@ -77,6 +77,9 @@ namespace videocore
     {
     public:
         RTMPSession(std::string uri, RTMPSessionStateCallback callback);
+
+        RTMPSession(std::string uri, std::string privateKey, RTMPSessionStateCallback callback);
+
         ~RTMPSession();
 
         void connectServer();
@@ -90,6 +93,8 @@ namespace videocore
         void updateVideoFrame(int width, int height);
 
     private:
+
+        void initialize(std::string uri);
 
         // Deprecate sendPacket
         void sendPacket(uint8_t* data, size_t size, RTMPChunk_0 metadata);
@@ -161,6 +166,8 @@ namespace videocore
 
         std::string                     m_playPath;
         std::string                     m_app;
+        std::string                     m_privateKey;
+
         std::map<int32_t, std::string>  m_trackedCommands;
 
         size_t          m_outChunkSize;

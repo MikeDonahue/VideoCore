@@ -42,6 +42,27 @@ namespace videocore
 {
     static const size_t kMaxSendbufferSize = 10 * 1024 * 1024; // 10 MB
 
+    RTMPSession::RTMPSession(std::string uri, std::string privateKey, RTMPSessionStateCallback callback)
+    : m_streamOutRemainder(65536)
+    , m_streamInBuffer(new PreallocBuffer(4096))
+    , m_callback(callback)
+    , m_bandwidthCallback(nullptr)
+    , m_outChunkSize(128)
+    , m_inChunkSize(128)
+    , m_bufferSize(0)
+    , m_streamId(0)
+    , m_numberOfInvokes(0)
+    , m_state(kClientStateNone)
+    , m_ending(false)
+    , m_jobQueue("com.videocore.rtmp")
+    , m_networkQueue("com.videocore.rtmp.network")
+    , m_previousTs(0)
+    , m_clearing(false)
+    {
+        m_privateKey = privateKey;
+        this->initialize(uri);
+    }
+
     RTMPSession::RTMPSession(std::string uri, RTMPSessionStateCallback callback)
     : m_streamOutRemainder(65536)
     , m_streamInBuffer(new PreallocBuffer(4096))
@@ -59,6 +80,26 @@ namespace videocore
     , m_previousTs(0)
     , m_clearing(false)
     {
+        this->initialize(uri);
+    }
+    RTMPSession::~RTMPSession()
+    {
+        DLog("~RTMPSession");
+        if(m_state == kClientStateConnected) {
+            sendDeleteStream();
+        }
+
+        m_ending = true;
+        m_jobQueue.mark_exiting();
+        m_jobQueue.enqueue_sync([]() {});
+        m_networkQueue.mark_exiting();
+        m_networkQueue.enqueue_sync([]() {});
+#ifdef __APPLE__
+        dispatch_release(m_networkWaitSemaphore);
+#endif
+    }
+    void
+    RTMPSession::initialize(std::string uri) {
         m_previousChunk.msg_length.data = 0;
         m_previousChunk.msg_stream_id = 0;
         m_previousChunk.msg_type_id = 0;
@@ -91,22 +132,6 @@ namespace videocore
         m_playPath.pop_back();
 
         connectServer();
-    }
-    RTMPSession::~RTMPSession()
-    {
-        DLog("~RTMPSession");
-        if(m_state == kClientStateConnected) {
-            sendDeleteStream();
-        }
-
-        m_ending = true;
-        m_jobQueue.mark_exiting();
-        m_jobQueue.enqueue_sync([]() {});
-        m_networkQueue.mark_exiting();
-        m_networkQueue.enqueue_sync([]() {});
-#ifdef __APPLE__
-        dispatch_release(m_networkWaitSemaphore);
-#endif
     }
     void
     RTMPSession::connectServer() {
@@ -460,6 +485,11 @@ namespace videocore
         put_named_string(buff, "app", m_app.c_str());
         put_named_string(buff,"type", "nonprivate");
         put_named_string(buff, "tcUrl", url.str().c_str());
+
+        if (!m_privateKey.empty()) {
+            put_named_string(buff, "privateKey", m_privateKey.c_str());
+        }
+        
         put_named_bool(buff, "fpad", false);
         put_named_double(buff, "capabilities", 15.);
         put_named_double(buff, "audioCodecs", 10. );

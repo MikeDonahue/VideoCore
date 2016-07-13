@@ -146,6 +146,10 @@ typedef NS_ENUM(NSInteger, VCDisconnectReason) {
 - (void) startRtmpSessionWithURL:(NSString*) rtmpUrl
                     andStreamKey:(NSString*) streamKey;
 
+- (void) startRtmpSessionWithURL:(NSString*) rtmpUrl
+                    andStreamKey:(NSString*) streamKey
+                    andPrivateKey: (NSString*) privateKey;
+                    
 - (void) updateVideoFrameWithWidth:(int) width andHeight:(int)height;
 
 //- (void) endRtmpSession;
