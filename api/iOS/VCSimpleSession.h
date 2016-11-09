@@ -49,8 +49,16 @@ typedef NS_ENUM(NSInteger, VCSessionState)
 
 typedef NS_ENUM(NSInteger, VCCameraState)
 {
-    VCCameraStateFront,
-    VCCameraStateBack
+    VCCameraStateFront = 0,
+    VCCameraStateBack = 1
+};
+
+typedef NS_ENUM(int, VCFlashMode)
+{
+    VCFlashModeNotAvaible = -1,
+    VCFlashModeOff  = 0,
+    VCFlashModeOn   = 1,
+    VCFlashModeAuto = 2
 };
 
 typedef NS_ENUM(NSInteger, VCAspectMode)
@@ -66,13 +74,9 @@ typedef NS_ENUM(NSInteger, VCFilter) {
     VCFilterInvertColors,
     VCFilterSepia,
     VCFilterFisheye,
-    VCFilterGlow
-};
-
-typedef NS_ENUM(NSInteger, VCDisconnectReason) {
-    VCDisconnectReasonManual,
-    VCDisconnectReasonDealloc,
-    VCDisconnectReasonConnectError
+    VCFilterGlow,
+    VCFilterBeauty,
+    VCFilterAntique,
 };
 
 @protocol VCSessionDelegate <NSObject>
@@ -80,10 +84,7 @@ typedef NS_ENUM(NSInteger, VCDisconnectReason) {
 - (void) connectionStatusChanged: (VCSessionState) sessionState;
 @optional
 - (void) didAddCameraSource:(VCSimpleSession*)session;
-
-- (void) detectedThroughput: (NSInteger) throughputInBytesPerSecond; //Depreciated, should use method below
 - (void) detectedThroughput: (NSInteger) throughputInBytesPerSecond videoRate:(NSInteger) rate;
-- (void) didDisconnectWithReason:(VCDisconnectReason)reason;
 @end
 
 @interface VCSimpleSession : NSObject
@@ -97,9 +98,12 @@ typedef NS_ENUM(NSInteger, VCDisconnectReason) {
 @property (nonatomic, assign) int               fps;            // Change will not take place until the next RTMP Session
 @property (nonatomic, assign, readonly) BOOL    useInterfaceOrientation;
 @property (nonatomic, assign) VCCameraState cameraState;
+@property (nonatomic, assign) VCFlashMode   flashMode;
 @property (nonatomic, assign) BOOL          orientationLocked;
 @property (nonatomic, assign) BOOL          torch;
 @property (nonatomic, assign) float         videoZoomFactor;
+@property (nonatomic, readonly) float       maxVideoZoomFactor;
+@property (nonatomic, readonly) float       minVideoZoomFactor;
 @property (nonatomic, assign) int           audioChannelCount;
 @property (nonatomic, assign) float         audioSampleRate;
 @property (nonatomic, assign) float         micGain;        // [0..1]
@@ -146,14 +150,11 @@ typedef NS_ENUM(NSInteger, VCDisconnectReason) {
 - (void) startRtmpSessionWithURL:(NSString*) rtmpUrl
                     andStreamKey:(NSString*) streamKey;
 
-- (void) startRtmpSessionWithURL:(NSString*) rtmpUrl
-                    andStreamKey:(NSString*) streamKey
-                    andPrivateKey: (NSString*) privateKey;
-                    
-- (void) updateVideoFrameWithWidth:(int) width andHeight:(int)height;
+- (void) endRtmpSession;
 
-//- (void) endRtmpSession;
-- (void) manualEndRtmpSession;
+//- (void) enterBackground;
+
+- (void) enableBeauty:(BOOL)enable;
 
 - (void) getCameraPreviewLayer: (AVCaptureVideoPreviewLayer**) previewLayer;
 
@@ -167,4 +168,5 @@ typedef NS_ENUM(NSInteger, VCDisconnectReason) {
 - (void) addPixelBufferSource: (UIImage*) image
                      withRect: (CGRect) rect;
 
+- (void) snapStillImageWithCompletion:(void(^)(NSData *imageData))handler;
 @end

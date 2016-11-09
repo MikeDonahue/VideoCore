@@ -1,41 +1,53 @@
 
+#VideoCore branch for me
 
+This project fork from [VideoCore](https://github.com/jgh-/VideoCore). Thanks the great work of jgh-.
+
+Coz jgh- had not focus on this project for a long time. And I was using and improving this project for a long time, so I want to only update this branch later. 
+
+BTW: There are some Chinese company using VideoCore(like Baidu and Tencent), but I can't see any improvement from such "great" company. It that a bad news?
+
+For more dicuss, join my QQ group:1360583
+
+---
 #VideoCore
-
-VideoCore is a project inteded to be an audio and video manipulation and streaming graph.  It currently works with iOS and periodic (live) sources.  It is a work in progress and will eventually expand to other platforms such as OS X and Android.  **Contributors welcome!** 
+VideoCore is a project inteded to be an audio and video manipulation and streaming graph.  It currently works with iOS.
 
 ###Table of Contents
 * [Setup](#setup)
-* [Projects Using VideoCore](#projects-using-videocore)
 * [Architecture Overview](#architecture-overview)
 * [Version History](#version-history)
 
 ##Setup
 
-####CocoaPods
-
-Create a `Podfile` with the contents
-``` ruby
-platform :ios, '6.0'
-pod 'VideoCore', '~> 0.2.0'
-```
-Next, run `pod install` and open the `xcworkspace` file that is created.
-
-####Sample Application
-The SampleBroadcaster project in the sample folder uses CocoaPods to bring in
-VideoCore as a dependency:
+Create a Podfile with the contents
 
 ```
-cd sample/SampleBroadcaster
+platform :ios, '8.0'
+source 'https://github.com/CocoaPods/Specs.git'
+pod 'VideoCore', path: '../..'
+```
+*Note: the last line depend on the relationship between your project and the VideoCore source code*
+
+####Demo Application
+The SampleBroadcaster project in the demo folder uses CocoaPods to bring in
+local VideoCore as a dependency:
+
+```
+cd demo/SampleBroadcaster
 pod install
 open SampleBroadcaster.xcworkspace
 ```
+Maybe "pod install --verbose --no-repo-update" will be faster in China
 
-... or you can build from the command-line:
+Every time yo run the pod command you should do the setting modification:
+
 ```
-xcodebuild -workspace SampleBroadcaster.xcworkspace -scheme SampleBroadcaster build
+select Pods project with VideoCore target, find "Header Search Paths" setting and remove "${PODS_ROOT}/Headers/Private" and "${PODS_ROOT}/Headers/Private/VideoCore" item
+
 ```
-More on CocoaPods: http://cocoapods.org/
+
+I want anybody can tell me how to change the pod file to avoid this action??
 
 ##Architecture Overview
 
@@ -91,7 +103,11 @@ videocore::Apple::StreamSession : videocore::IStreamSession
 ```
 
 ##Version History
-
+* 0.4.1
+	 * Various crash case bugfixes
+	 * Remove boost dependency
+	 * Much function about camera, like zoom, focus etc added.
+	 * Beautify filter added (import from project [LiveVideoCoreSDK](https://github.com/runner365/LiveVideoCoreSDK)), I can't find this project's license, I will take care this part later.
 * 0.3.1
     * Various bugfixes
     * Introduction of pixel buffer sources so you can add images to broadcast.

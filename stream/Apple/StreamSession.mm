@@ -47,7 +47,9 @@
 
 - (void) stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode
 {
-    self.session->nsStreamCallback(aStream,static_cast<unsigned>( eventCode ));
+    if (self.session) {
+        self.session->nsStreamCallback(aStream,static_cast<unsigned>( eventCode ));
+    }
 }
 
 @end
@@ -66,6 +68,9 @@ namespace videocore {
         
         StreamSession::~StreamSession()
         {
+            [NSIS(m_inputStream) setDelegate:nil];
+            [NSOS(m_outputStream) setDelegate:nil];
+
             disconnect();
             [SCB(m_streamCallback) release];
         }
@@ -90,21 +95,23 @@ namespace videocore {
             
                 m_inputStream = (NSInputStream*)readStream;
                 m_outputStream = (NSOutputStream*)writeStream;
-            
 
+                // We want the stream operation run in a thread
+                // So we need to run startNetwork in a thread.
                 dispatch_queue_t queue = dispatch_queue_create("com.videocore.network", 0);
-                
                 if(m_inputStream && m_outputStream) {
                     dispatch_async(queue, ^{
                         this->startNetwork();
                     });
+                    std::unique_lock<std::mutex> lk(m_connectedMutex);
+                    m_connectedEvent.wait(lk);
+                    NSLog(@"StreamSession connected");
                 }
                 else {
                     nsStreamCallback(nullptr, NSStreamEventErrorOccurred);
                 }
                 dispatch_release(queue);
             }
-
         }
         
         void
@@ -204,13 +211,13 @@ namespace videocore {
                 setStatus(kStreamStatusEndStream, true);
             }
             if(event & NSStreamEventErrorOccurred) {
-                setStatus(kStreamStatusErrorEncountered, true);
                 if (NSIS(m_inputStream).streamError) {
                     NSLog(@"Input stream error:%@", NSIS(m_inputStream).streamError);
                 }
                 if (NSOS(m_outputStream).streamError) {
                     NSLog(@"Output stream error:%@", NSIS(m_outputStream).streamError);
                 }
+                setStatus(kStreamStatusErrorEncountered, true);
             }
         }
         
@@ -226,7 +233,12 @@ namespace videocore {
             [NSIS(m_inputStream) open];
 
             [(id)m_runLoop retain];
+
+            m_connectedEvent.notify_all();
+
+            NSLog(@"StreamSession running");
             [NSRL(m_runLoop) run];
+            NSLog(@"StreamSession run finished");
         }
         
     }
