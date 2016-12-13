@@ -26,7 +26,7 @@
 #ifndef __videocore_util_h
 #define __videocore_util_h
 
-#ifdef DEBUG
+#ifndef NDEBUG
 #define DLog(...) printf(__VA_ARGS__);
 #else
 #define DLog(...) {}
