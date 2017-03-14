@@ -389,6 +389,13 @@ namespace videocore { namespace iOS {
                     default:
                         break;
                 }
+  
+                // make the front camera mirrored
+                AVCaptureInput* currentCameraInput = [session.inputs objectAtIndex:0];
+                
+                if(((AVCaptureDeviceInput*)currentCameraInput).device.position == AVCaptureDevicePositionFront){
+                    [av setVideoMirrored:YES];
+                }
             }
         }
 
