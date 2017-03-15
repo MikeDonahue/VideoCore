@@ -149,7 +149,8 @@ typedef NS_ENUM(NSInteger, VCDisconnectReason) {
 - (void) startRtmpSessionWithURL:(NSString*) rtmpUrl
                     andStreamKey:(NSString*) streamKey
                     andPrivateKey: (NSString*) privateKey;
-                    
+
+
 - (void) updateVideoFrameWithWidth:(int) width andHeight:(int)height;
 
 //- (void) endRtmpSession;
@@ -166,5 +167,11 @@ typedef NS_ENUM(NSInteger, VCDisconnectReason) {
 
 - (void) addPixelBufferSource: (UIImage*) image
                      withRect: (CGRect) rect;
+
+-(void)addPixelBufferSource:(CVPixelBufferRef)bufferRef
+              realImageSize:(CGSize)size
+                    andRect:(CGRect)rect;
+
+- (void) bufferCaptured:(CVPixelBufferRef)pixelBufferRef;
 
 @end

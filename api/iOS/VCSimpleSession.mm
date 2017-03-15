@@ -517,6 +517,10 @@ namespace videocore { namespace simpleApi {
     m_pbOutput.reset();
     [_previewView release];
     _previewView = nil;
+    
+    AVAudioSession *session = [AVAudioSession sharedInstance];
+    [session setActive:NO error:nil];
+    [session release];
 
     dispatch_release(_graphManagementQueue);
 
@@ -673,9 +677,7 @@ namespace videocore { namespace simpleApi {
         [self didDisconnectWithReason:VCDisconnectReasonManual];
     }
 
-- (void) endRtmpSession
-{
-
+- (void) endRtmpSession {
     m_h264Packetizer.reset();
     m_aacPacketizer.reset();
     m_videoSplit->removeOutput(m_h264Encoder);
@@ -943,6 +945,50 @@ namespace videocore { namespace simpleApi {
     free(rawData);
 
 }
+
+-(void)addPixelBufferSource:(CVPixelBufferRef)bufferRef
+              realImageSize:(CGSize)size
+                    andRect:(CGRect)rect{
+    
+    NSInteger width = size.width;
+    NSInteger height = size.height;
+    
+    CVPixelBufferLockBaseAddress(bufferRef, 0);
+    GLubyte *rawImageBytes = (GLubyte *)CVPixelBufferGetBaseAddress(bufferRef); //CASTED I DONT kNOW WHY
+    size_t dataSize = CVPixelBufferGetDataSize(bufferRef);
+    
+    unsigned char* buffer = (unsigned char*)malloc( dataSize );
+    
+    memcpy(buffer, rawImageBytes, dataSize);
+
+    CVPixelBufferUnlockBaseAddress(bufferRef, 0);
+    
+    if(m_pixelBufferSource){
+        m_pixelBufferSource->pushPixelBuffer(buffer, width * height * 4);
+    }else{
+        m_pixelBufferSource = std::make_shared<videocore::Apple::PixelBufferSource>(width, height, kCVPixelFormatType_32BGRA);
+        
+        m_pbAspect = std::make_shared<videocore::AspectTransform>(self.videoSize.width,self.videoSize.height,m_aspectMode);
+        
+        m_pbPosition = std::make_shared<videocore::PositionTransform>(self.videoSize.width/2, self.videoSize.height/2,
+                                                                      self.videoSize.width * self.videoZoomFactor, self.videoSize.height * self.videoZoomFactor,
+                                                                      self.videoSize.width, self.videoSize.height
+                                                                      );
+        NSLog(@"rect:%@\nvideoSize:%@",[NSValue valueWithCGRect:rect],[NSValue valueWithCGSize:self.videoSize]);
+        m_pixelBufferSource->setOutput(m_pbAspect);
+        m_pbAspect->setOutput(m_pbPosition);
+        m_pbPosition->setOutput(m_videoMixer);
+        m_videoMixer->registerSource(m_pixelBufferSource);
+        m_pixelBufferSource->pushPixelBuffer(buffer, width * height * 4);
+    }
+    free(buffer);
+    
+}
+
+- (void) bufferCaptured:(CVPixelBufferRef)pixelBufferRef{
+    self->m_cameraSource->bufferCaptured(pixelBufferRef);
+}
+
 - (NSString *) applicationDocumentsDirectory
 {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
